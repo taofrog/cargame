@@ -105,10 +105,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalOptions>/std:c++latest %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalIncludeDirectories>raylib-5.5_win64_msvc16\include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>raylib-5.5_win64_msvc16\lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>raylib.lib;winmm.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -131,6 +134,7 @@
     <ClCompile Include="button.cpp" />
     <ClCompile Include="cargame.cpp" />
     <ClCompile Include="createmap.h" />
+    <ClCompile Include="decoration.cpp" />
     <ClCompile Include="game.cpp" />
     <ClCompile Include="obstacle.cpp" />
     <ClCompile Include="vehicle.cpp" />
@@ -138,10 +142,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="button.h" />
+    <ClInclude Include="decoration.h" />
     <ClInclude Include="game.h" />
     <ClInclude Include="obstacle.h" />
     <ClInclude Include="vehicle.h" />
     <ClInclude Include="wallloop.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="blur.glsl" />
+    <None Include="plantf.glsl" />
+    <None Include="plantv.glsl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

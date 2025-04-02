@@ -17,6 +17,8 @@ namespace fs = std::filesystem;
 
 int main()
 {
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
+
     const int screenwidth = 1500;
     const int screenheight = 1000;
     InitWindow(screenwidth, screenheight, "Racing");

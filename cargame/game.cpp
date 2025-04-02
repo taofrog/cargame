@@ -45,7 +45,12 @@ void game::savelevel() {
 void game::rungame(int level) {
     SetWindowTitle("Racing");
 
-    const int carnum = 4;
+    BeginDrawing();
+    ClearBackground(WHITE);
+    DrawText("Loading level data", 300, 300, 100, BLACK);
+    EndDrawing();
+
+    const int carnum = 4; //PLAYER COUNT (local)
 
     vehicle cars[carnum] = { vehicle(Vector2{ 450, 350 }, Vector2{ 10, 10 }),
                        vehicle(Vector2{ 450, 400 }, Vector2{ 10, 10 }),
@@ -55,11 +60,17 @@ void game::rungame(int level) {
     cars[2].col = GREEN;
     cars[3].col = YELLOW;
 
-    wallloop walls("");
+    button savebutton(Vector2{ 1400, 20 }, Vector2{ 50, 20 }, RED, "Save");
 
+    // CREATING LEVEL ------------------------------------------------------------------------------------------
+    wallloop walls(""); //create as empty
+
+    //  load level from file
+    bool saved = true;
     std::ifstream levelfile = std::ifstream();
     if (level < 0) {
-        levelfile.open("level.txt");
+        saved = false;
+        levelfile.open("level.txt"); // open prev unsaved if level is not supplied, possibly newly created level
     }
     else {
         std::string filename = std::string("level") + std::to_string(level) + std::string(".txt");
@@ -77,14 +88,27 @@ void game::rungame(int level) {
         std::cout << "file wont open\n";
     }
 
-    bool saved = false;
-    if (level >= 0) {
-        saved = true;
+    BeginDrawing();
+    ClearBackground(WHITE);
+    for (int i = 0; i < walls.getWalls().size(); i++) {
+        walls.getWalls()[i].draw(RED);
     }
+    DrawText("Rendering level", 300, 300, 100, BLACK);
+    EndDrawing();
 
-    Texture map = drawmap(walls, swidth, sheight);
+    Texture map = drawmap(walls, swidth, sheight); // turn the level into a texture that can be drawn each frame. terribly optimised, for large levels this can take multiple minutes
 
-    button savebutton(Vector2{ 1400, 20 }, Vector2{ 50, 20 }, RED, "Save");
+    const int maxdecocount = 1200;
+    std::vector<Vector2> decopoints = gendeco(map, maxdecocount); // create random points for deco, not on the road
+
+    std::vector<decoration> deco = std::vector<decoration>();
+    for (int i = 0; i < decopoints.size(); i++){
+        deco.push_back(decoration(decopoints[i], 40*i/maxdecocount + 50));
+        deco[i].lifetime = i;
+    }
+    //  ------------------------------------------------------------------------------------------
+
+    Shader plantshader = LoadShader("plantv.glsl", "plantf.glsl");
 
     float dt = 0;
 
@@ -94,7 +118,9 @@ void game::rungame(int level) {
             game = false;
         }
 
-        dt += 1 / (float)GetFPS();
+        float deltatime = 1 / (float)GetFPS();
+
+        dt += deltatime;
         //stop dt being crazy
         if (dt > 1) { dt = 1; };
 
@@ -103,6 +129,7 @@ void game::rungame(int level) {
             savelevel();
         }
 
+        // user input
         Vector2 directions[] = { getdirection(KEY_Q, KEY_E, KEY_W), 
                                  getdirection(KEY_I, KEY_P, KEY_O), 
                                  getdirection(KEY_B, KEY_M, KEY_N), 
@@ -111,12 +138,15 @@ void game::rungame(int level) {
         //fixed update
         float smallstep = 0.004f;
         while (dt >= smallstep) {
+            //update positions
             for (int i = 0; i < carnum; i++) {
                 cars[i].updateMovement(directions[i], smallstep);
             }
+            //update physics
             for (int i = 0; i < carnum; i++) {
                 cars[i].updatePhysics(smallstep);
             }
+            // collide cars with each other
             for (int i = 0; i < carnum; i++) {
                 for (int j = 3; j > i; j--) {
                     Vector2 p1 = cars[i].getPosition();
@@ -130,7 +160,7 @@ void game::rungame(int level) {
                     }
                 }
             }
-
+            // collide cars with walls
             for (int i = 0; i < carnum; i++) {
                 walls.collisions(cars[i]);
             }
@@ -138,20 +168,47 @@ void game::rungame(int level) {
             dt -= smallstep;
         }
 
+        for (int i = 0; i < deco.size(); i++) {
+            deco[i].lifetime += (float)i / 10000 + deltatime;
+        }
+
+        int p1uniform = GetShaderLocation(plantshader, "p1pos");
+        int p2uniform = GetShaderLocation(plantshader, "p2pos");
+        int p3uniform = GetShaderLocation(plantshader, "p3pos");
+        int p4uniform = GetShaderLocation(plantshader, "p4pos");
+        Vector2 p1 = cars[0].getPosition();
+        Vector2 p2 = cars[1].getPosition();
+        Vector2 p3 = cars[2].getPosition();
+        Vector2 p4 = cars[3].getPosition();
+        SetShaderValueV(plantshader, p1uniform, &p1, RL_SHADER_UNIFORM_VEC2, 1);
+        SetShaderValueV(plantshader, p2uniform, &p2, RL_SHADER_UNIFORM_VEC2, 1);
+        SetShaderValueV(plantshader, p3uniform, &p3, RL_SHADER_UNIFORM_VEC2, 1);
+        SetShaderValueV(plantshader, p4uniform, &p4, RL_SHADER_UNIFORM_VEC2, 1);
+
         BeginDrawing();
-        ClearBackground(Color{ 255, 255, 255 });
+            ClearBackground(Color{ 255, 255, 255 });
 
-        DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), WHITE);
-        for (int i = 0; i < carnum; i++) {
-            cars[i].draw();
-        }
+            // draw map
+            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), WHITE);
 
-        if (!saved) {
-            savebutton.draw();
-        }
+            // draw cars
+            for (int i = 0; i < carnum; i++) {
+                cars[i].draw();
+            }
 
-        //DrawText(TextFormat("%i", fps), 5, 5, 15, BLACK);
-        DrawFPS(0, 0);
+            //draw decorations
+            BeginShaderMode(plantshader);
+                for (int i = 0; i < deco.size(); i++) {
+                    deco[i].draw(plantshader);
+                }
+            EndShaderMode();
+
+            // draw savebutton
+            if (!saved) {
+                savebutton.draw();
+            }
+
+            DrawFPS(0, 0);
 
         EndDrawing();
     }
@@ -182,7 +239,7 @@ void game::runmapcreation()
         else if (IsMouseButtonDown(0)) {
             Vector2 dfromlast = { points[k][points[k].size() - 1].x - GetMousePosition().x, points[k][points[k].size() - 1].y - GetMousePosition().y };
             float len = sqrt(dfromlast.x * dfromlast.x + dfromlast.y * dfromlast.y);
-            if (len >= 15) {
+            if (len >= 30) {
                 points[k].push_back(GetMousePosition());
             }
         }
@@ -267,6 +324,10 @@ int game::runmenu() {
         std::cout << std::string("Level ") + std::to_string(levels[i]) << "\n";
     }
 
+    decoration plant = decoration(Vector2{500, 500}, 50);
+
+    Shader plantshader = LoadShader("plantv.glsl", "plantf.glsl");
+
     bool game = true;
     while (game) {
         if (WindowShouldClose()) {
@@ -279,12 +340,18 @@ int game::runmenu() {
             }
         }
 
+        plant.lifetime += 0.016;
+
         BeginDrawing();
         ClearBackground(Color{ 200, 200, 200 });
 
         for (int i = 0; i < levelbuttons.size(); i++) {
             levelbuttons[i].draw();
         }
+
+        BeginShaderMode(plantshader);
+            plant.draw(plantshader);
+        EndShaderMode();
 
         DrawFPS(0, 0);
 
@@ -304,15 +371,42 @@ Vector2 game::getdirection(int left, int right, int forward, int back) {
     return direction;
 }
 
-Texture game::drawmap(wallloop walls, int width, int height) {
+Texture game::drawmap(wallloop walls, int width, int height) { // one time use function to draw the map to a texture
     RenderTexture2D map = LoadRenderTexture(width, height);
     BeginTextureMode(map);
-
+        // clear with green and draw the map
+        ClearBackground(DARKGREEN);
         walls.draw();
-
     EndTextureMode();
 
-    Texture tex = map.texture;
+    Shader blur = LoadShader(0, "blur.glsl"); // loading shader for "antialiasing"
 
-    return tex;
+    BeginTextureMode(map);
+        // redraw the texture to itself using the blur shader and drawing upside down to fix gl flipping issue
+        BeginShaderMode(blur);
+            DrawTextureRec(map.texture, Rectangle{0, 0, (float)map.texture.width, (float)-map.texture.height}, Vector2Zero(), WHITE);
+        EndShaderMode();
+    EndTextureMode();;
+
+    return map.texture;
+}
+
+std::vector<Vector2> game::gendeco(Texture map, int maxcount) { // create a bunch of random points that can be used to render decorations
+    Image mapimg = LoadImageFromTexture(map);
+    ImageFlipVertical(&mapimg);
+    Color* colours = LoadImageColors(mapimg);
+
+    std::vector<Vector2> points = std::vector<Vector2>();
+    for (int i = 0; i < maxcount; i++) {
+        int x = GetRandomValue(1, 1499);
+        int y = GetRandomValue(1, 999);
+
+        int index = (y * mapimg.width) + x;
+
+        if (colours[index].r == DARKGREEN.r && colours[index].g == DARKGREEN.g && colours[index].b == DARKGREEN.b) {
+            points.push_back(Vector2{ (float)x, (float)y });
+        }
+    }
+
+    return points;
 }

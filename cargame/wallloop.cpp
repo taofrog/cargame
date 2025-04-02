@@ -32,10 +32,10 @@ void wallloop::addloop(std::string args) {
 					int x = 0;
 					int y = 0;
 					for (int j = 0; j < sx.size(); j++) {
-						x += (sx[sx.size() - j - 1] - 48) * pow(10, j);
+						x += (int)(sx[sx.size() - j - 1] - 48) * pow(10, j);
 					}
 					for (int j = 0; j < sy.size(); j++) {
-						y += (sy[sy.size() - j - 1] - 48) * pow(10, j);
+						y += (int)(sy[sy.size() - j - 1] - 48) * pow(10, j);
 					}
 
 					points.push_back(Vector2{ (float)x, (float)y });
@@ -92,7 +92,7 @@ void wallloop::draw() {
 			}
 		}
 	}
-	/*
+	
 	for (int i = 0; i < walls.size(); i++) {
 		Rectangle r = walls[i].getRecBounds();
 
@@ -114,20 +114,19 @@ void wallloop::draw() {
 				}
 			}
 		}
-	}*/
+	}
 
 	for (int y = 0; y < 1000; y++) {
 		bool inside = false;
 		for (int x = 0; x < 1500; x++) {
 			for (int i = 0; i < walls.size(); i++) {
 				Rectangle r = walls[i].getRecBounds();
-				r.x -= 2;
-				r.y -= 2;
-				r.width += 4;
-				r.height += 4;
+				r.x -= 1.01;
+				r.y -= 1.01;
+				r.width += 2.02;
+				r.height += 2.1;
 				if (CheckCollisionPointRec(Vector2{ (float)x, (float)y }, r)) {
-					//DrawPixel(x, y, Color{ 255, 0, 0, 150 });
-					Vector2 a = { x, y };
+					Vector2 a = { (float)x, (float)y };
 					Vector2 b = walls[i].getp1();
 					Vector2 c = walls[i].getp2();
 
@@ -145,11 +144,14 @@ void wallloop::draw() {
 				if (inside) {
 					DrawPixel(x, y, GRAY);
 				}
+				else {
+					//DrawPixel(x, y, ColorFromHSV(126, 0.80, 0.37 + 0.06 * sin(0.02*x + 0.02*y)));
+				}
 			}
 		}
 	}
 
 	for (int i = 0; i < walls.size(); i++) {
-		walls[i].draw();
+		walls[i].draw(BLACK);
 	}
 }

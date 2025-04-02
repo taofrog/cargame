@@ -24,9 +24,6 @@
     <ClCompile Include="obstacle.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="createmap.h">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="wallloop.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -34,6 +31,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="game.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="createmap.h">
+      <Filter>Header Files</Filter>
+    </ClCompile>
+    <ClCompile Include="decoration.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -53,5 +56,13 @@
     <ClInclude Include="game.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="decoration.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="blur.glsl" />
+    <None Include="plantv.glsl" />
+    <None Include="plantf.glsl" />
   </ItemGroup>
 </Project>
