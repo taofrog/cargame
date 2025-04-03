@@ -18,8 +18,9 @@ out vec3 fragNormal;
 void main()
 {
     fragColor = vertexColor;
-    float distance = min(min(length(vertexPosition.xy - p1pos), length(vertexPosition.xy - p2pos)), min(length(vertexPosition.xy - p3pos), length(vertexPosition.xy - p4pos)));
-    fragColor.a = min(distance/80 - 0.1, fragColor.a);
+    
+    //float distance = min(min(length(vertexPosition.xy - p1pos), length(vertexPosition.xy - p2pos)), min(length(vertexPosition.xy - p3pos), length(vertexPosition.xy - p4pos)));
+    //fragColor.a = min(distance/80 - 0.1, fragColor.a);
     fragNormal = vertexNormal;
     gl_Position = mvp*vec4(vertexPosition.xy, 0.0, 1.0);
 }

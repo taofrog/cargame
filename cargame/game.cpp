@@ -11,6 +11,7 @@ void game::savelevel() {
                 file = file.erase(file.length() - 4, file.length() - 1);
                 file = file.erase(0, 5);
                 levels.push_back(std::stoi(file));
+                std::cout << std::stoi(file) << "\n";
             }
         }
     }
