@@ -1,21 +1,9 @@
 #include "game.h"
 
 void game::savelevel() {
-    int pathlen = (int)fs::current_path().string().length() + 1;
-    std::vector<int> levels;
+    std::vector<int> levels = levellist(); // list of level ids
 
-    for (const auto& entry : fs::directory_iterator(fs::current_path())) {
-        std::string file = entry.path().string().erase(0, pathlen);
-        if (file.length() > 9) {
-            if (file.substr(0, 5) == "level") {
-                file = file.erase(file.length() - 4, file.length() - 1);
-                file = file.erase(0, 5);
-                levels.push_back(std::stoi(file));
-                std::cout << std::stoi(file) << "\n";
-            }
-        }
-    }
-
+    // find lowest unused number
     int freefile = (int)levels.size();
     int prev = -1;
     for (int i = 0; i < levels.size(); i++) {
@@ -25,12 +13,14 @@ void game::savelevel() {
         }
     }
 
+    // open current level file for reading and new file for writing
     std::ifstream currentfile = std::ifstream("level.txt");
     std::string linedata;
 
     std::string newfilename = std::string("level") + std::to_string(freefile) + std::string(".txt");
     std::ofstream newfile(newfilename);
 
+    // write current file to new file, line by line
     if (currentfile.is_open() && newfile.is_open()) {
         newfile.clear();
         while (std::getline(currentfile, linedata)) {
@@ -109,7 +99,14 @@ void game::rungame(int level) {
     }
     //  ------------------------------------------------------------------------------------------
 
-    Shader plantshader = LoadShader("plantv.glsl", "plantf.glsl");
+    Shader fader = LoadShader(0, "shaders/fade.glsl");
+    Shader plantshader = LoadShader("shaders/plantv.glsl", "shaders/plantf.glsl");
+    int p1uniform = GetShaderLocation(plantshader, "p1pos");
+    int p2uniform = GetShaderLocation(plantshader, "p2pos");
+    int p3uniform = GetShaderLocation(plantshader, "p3pos");
+    int p4uniform = GetShaderLocation(plantshader, "p4pos");
+
+    RenderTexture2D trailbuffer = LoadRenderTexture(1500, 1000);
 
     float dt = 0;
 
@@ -131,9 +128,9 @@ void game::rungame(int level) {
         }
 
         // user input
-        Vector2 directions[] = { getdirection(KEY_Q, KEY_E, KEY_W), 
-                                 getdirection(KEY_I, KEY_P, KEY_O), 
-                                 getdirection(KEY_B, KEY_M, KEY_N), 
+        Vector2 directions[] = { getdirection(KEY_Q, KEY_E, KEY_W),
+                                 getdirection(KEY_I, KEY_P, KEY_O),
+                                 getdirection(KEY_B, KEY_M, KEY_N),
                                  getdirection(KEY_Z, KEY_C, KEY_X) };
 
         //fixed update
@@ -173,10 +170,6 @@ void game::rungame(int level) {
             deco[i].lifetime += (float)i / 10000 + deltatime;
         }
 
-        int p1uniform = GetShaderLocation(plantshader, "p1pos");
-        int p2uniform = GetShaderLocation(plantshader, "p2pos");
-        int p3uniform = GetShaderLocation(plantshader, "p3pos");
-        int p4uniform = GetShaderLocation(plantshader, "p4pos");
         Vector2 p1 = cars[0].getPosition();
         Vector2 p2 = cars[1].getPosition();
         Vector2 p3 = cars[2].getPosition();
@@ -186,24 +179,32 @@ void game::rungame(int level) {
         SetShaderValueV(plantshader, p3uniform, &p3, RL_SHADER_UNIFORM_VEC2, 1);
         SetShaderValueV(plantshader, p4uniform, &p4, RL_SHADER_UNIFORM_VEC2, 1);
 
-        BeginDrawing();
-            ClearBackground(Color{ 255, 255, 255 });
-
-            // draw map
-            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), WHITE);
-
+        BeginTextureMode(trailbuffer); {
+            BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
+            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), { 255, 255, 255, 255 });
             // draw cars
             for (int i = 0; i < carnum; i++) {
                 cars[i].draw();
             }
+            EndBlendMode();
+        }
+        EndTextureMode();
+
+        BeginDrawing(); {
+            ClearBackground(Color{ 255, 255, 255 });
+
+            // draw map
+            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), { 255, 255, 255, 255 });
+
+            DrawTextureRec(trailbuffer.texture, Rectangle{ 0, 0, (float)trailbuffer.texture.width, (float)-trailbuffer.texture.height }, Vector2Zero(), { 255, 255, 255, 255 });
 
             //draw decorations
             BeginShaderMode(plantshader);
-                for (int i = 0; i < deco.size(); i++) {
-                    deco[i].draw(plantshader);
-                }
+            for (int i = 0; i < deco.size(); i++) {
+                deco[i].draw(plantshader);
+            }
             EndShaderMode();
-
+            
             // draw savebutton
             if (!saved) {
                 savebutton.draw();
@@ -211,7 +212,8 @@ void game::rungame(int level) {
 
             DrawFPS(0, 0);
 
-        EndDrawing();
+            EndDrawing();
+        }
     }
 }
 
@@ -302,32 +304,20 @@ void game::runmapcreation()
 }
 
 int game::runmenu() {
-    std::cout << fs::current_path().string() << "\n";
     int pathlen = (int)fs::current_path().string().length() + 1;
 
-    std::vector<int> levels;
-
-    for (const auto& entry : fs::directory_iterator(fs::current_path())) {
-        std::string file = entry.path().string().erase(0, pathlen);
-        if (file.length() > 9) {
-            if (file.substr(0, 5) == "level") {
-                file = file.erase(file.length() - 4, file.length() - 1);
-                file = file.erase(0, 5);
-                levels.push_back(std::stoi(file));
-            }
-        }
-    }
+    std::vector<int> levels = levellist();
 
     std::vector<button> levelbuttons = {};
 
     for (int i = 0; i < levels.size(); i++) {
-        levelbuttons.push_back(button(Vector2{ 0, 50.0f * i }, Vector2{ 100, 40 }, RED, std::string("Level ") + std::to_string(levels[i])));
+        levelbuttons.push_back(button(Vector2{ (float)(200 * (int)(i/20)), (50.0f * (i%20))}, Vector2{190, 45}, RED, std::string("Level ") + std::to_string(levels[i])));
         std::cout << std::string("Level ") + std::to_string(levels[i]) << "\n";
     }
 
     decoration plant = decoration(Vector2{500, 500}, 50);
 
-    Shader plantshader = LoadShader("plantv.glsl", "plantf.glsl");
+    Shader plantshader = LoadShader("shaders/plantv.glsl", "shaders/plantf.glsl");
 
     bool game = true;
     while (game) {
@@ -362,6 +352,40 @@ int game::runmenu() {
     return -1;
 }
 
+std::vector<int> game::levellist() {
+    int pathlen = (int)fs::current_path().string().length() + 1;
+
+    std::vector<int> levels;
+
+    for (const auto& entry : fs::directory_iterator(fs::current_path())) {
+        std::string file = entry.path().string().erase(0, pathlen);
+        if (file.length() > 9) {
+            if (file.substr(0, 5) == "level") {
+                file = file.erase(file.length() - 4, file.length() - 1);
+                file = file.erase(0, 5);
+                if (levels.size() > 0) {
+                    if (std::stoi(file) > levels[levels.size() - 1]) {
+                        levels.push_back(std::stoi(file));
+                    }
+                    else {
+                        int i = 1;
+                        while (i < levels.size() - 1 && std::stoi(file) < levels[levels.size() - i - 1]) {
+                            i++;
+                        }
+                        std::vector<int>::iterator it = levels.end() - i;
+                        levels.insert(it, std::stoi(file));
+                    }
+                }
+                else {
+                    levels.push_back(std::stoi(file));
+                }
+            }
+        }
+    }
+
+    return levels;
+}
+
 Vector2 game::getdirection(int left, int right, int forward, int back) {
     Vector2 direction = Vector2{0, 0};
     if (IsKeyDown(left)) { direction.x -= 1; }
@@ -380,7 +404,7 @@ Texture game::drawmap(wallloop walls, int width, int height) { // one time use f
         walls.draw();
     EndTextureMode();
 
-    Shader blur = LoadShader(0, "blur.glsl"); // loading shader for "antialiasing"
+    Shader blur = LoadShader(0, "shaders/blur.glsl"); // loading shader for "antialiasing"
 
     BeginTextureMode(map);
         // redraw the texture to itself using the blur shader and drawing upside down to fix gl flipping issue

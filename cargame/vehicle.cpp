@@ -49,7 +49,7 @@ void vehicle::updateMovement(Vector2 mov, float dt) {
 }
 
 void vehicle::draw(Color colour) {
-	DrawCircleGradient(pos.x, pos.y, 35, Color{ 0, 0, 0, 20 }, Color{ 0, 0, 0, 0 });
+	//DrawCircleGradient(pos.x, pos.y, 35, Color{ 0, 0, 0, 20 }, Color{ 0, 0, 0, 0 });
 
 	Rectangle r;
 	r.x = pos.x;

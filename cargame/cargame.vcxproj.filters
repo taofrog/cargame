@@ -61,8 +61,9 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="blur.glsl" />
-    <None Include="plantv.glsl" />
-    <None Include="plantf.glsl" />
+    <None Include="shaders\blur.glsl" />
+    <None Include="shaders\plantf.glsl" />
+    <None Include="shaders\plantv.glsl" />
+    <None Include="shaders\fade.glsl" />
   </ItemGroup>
 </Project>

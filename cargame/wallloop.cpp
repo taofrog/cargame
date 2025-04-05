@@ -78,22 +78,62 @@ void wallloop::collisions(vehicle &car) {
 
 
 void wallloop::draw() {
-	std::vector<std::vector<Vector2>> polys = { std::vector<Vector2>() };
-	int c = 0; // current polygon
 	for (int i = 0; i < walls.size(); i++) {
-		Vector2 a = walls[i].getp1();
+		Rectangle r = walls[i].getRecBounds();
+
 		Vector2 b = walls[i].getp2();
-		polys[c].push_back(a);
-		for (int j = 0; j < polys[c].size(); j++) {
-			Vector2 p = polys[c][j];
-			if (p.x == b.x && p.y == b.y) {
-				polys.push_back(std::vector<Vector2>());
-				c++;
+		Vector2 c = walls[i].getp1();
+
+		for (int j = 0; j < 4; j++) {
+			int e = j % 2;
+			int e2 = j * 0.5;
+			Vector2 a = { r.x - 1.5 + (r.width + 3) * e, r.y - 1.5 + (r.height + 3) * e2 };
+
+			if (a.x != b.x || a.y != b.y || a.x != c.x || a.y != c.y) {
+				Vector3 a1 = { b.x - a.x, b.y - a.y, 0 };
+				Vector3 b1 = { c.x - a.x, c.y - a.y, 0 };
+
+				float winding = Vector3CrossProduct(a1, b1).z;
+				if (winding < 0) {
+					Vector2 dif = b - c;
+					dif = Vector2Normalize(dif);
+					Vector2 be = b + dif;
+					Vector2 ce = c - dif;
+					DrawTriangle(a, be, ce, GRAY);
+				}
+			}
+		}
+
+		bool w = false;
+
+		if (c.y > b.y) {
+			for (int j = 0; j < r.height + 1; j++) {
+				int yval = (int)r.y + j;
+				int closestx = 10000;
+				for (int k = 0; k < walls.size(); k++) {
+					Rectangle r2 = walls[k].getRecBounds();
+
+					r2.x += 1;
+					r2.y -= 1.5;
+					r2.width -= 2;
+					r2.height += 3;
+
+					Vector2 b2 = walls[k].getp2();
+					Vector2 c2 = walls[k].getp1();
+
+					if (c2.y <= yval && b2.y >= yval) {
+						if (r2.x > r.x + r.width && r2.x < closestx) {
+							closestx = r2.x;
+						}
+						
+					}
+				}
+				DrawLine(r.x + r.width, yval, closestx, yval, GRAY);
 			}
 		}
 	}
-	
-	for (int i = 0; i < walls.size(); i++) {
+
+	/*for (int i = 0; i < walls.size(); i++) {
 		Rectangle r = walls[i].getRecBounds();
 
 		Vector2 b = walls[i].getp2();
@@ -149,7 +189,7 @@ void wallloop::draw() {
 				}
 			}
 		}
-	}
+	}*/
 
 	for (int i = 0; i < walls.size(); i++) {
 		walls[i].draw(BLACK);

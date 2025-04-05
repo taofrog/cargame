@@ -43,6 +43,8 @@ private:
 
 	std::vector<Vector2> gendeco(Texture map, int maxcount);
 
+	std::vector<int> levellist();
+
 	static Vector2 getdirection(int left = KEY_NULL, int right = KEY_NULL, int forward = KEY_NULL, int back = KEY_NULL);
 };
 
