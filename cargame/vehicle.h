@@ -11,6 +11,7 @@ private:
 	Vector2 siz;
 	float rot;
 	float rotvel;
+	Texture2D icon;
 public:
 	float accel = 80; // p s^-2
 	float decel = 250;  // p s^-2
@@ -26,7 +27,7 @@ public:
 	float getRotation() { return rot; }
 	float getRotationVel() { return rotvel; }
 
-	vehicle(Vector2 position, Vector2 size, float velocity = 0);
+	vehicle(Vector2 position, Vector2 size, std::string texpath = "", float velocity = 0);
 
 	void updatePhysics(float dt);
 

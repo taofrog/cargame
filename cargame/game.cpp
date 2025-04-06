@@ -43,41 +43,23 @@ void game::rungame(int level) {
 
     const int carnum = 4; //PLAYER COUNT (local)
 
-    vehicle cars[carnum] = { vehicle(Vector2{ 450, 350 }, Vector2{ 10, 10 }),
-                       vehicle(Vector2{ 450, 400 }, Vector2{ 10, 10 }),
-                       vehicle(Vector2{ 450, 450 }, Vector2{ 10, 10 }),
-                       vehicle(Vector2{ 450, 500 }, Vector2{ 10, 10 }) };
+    vehicle cars[carnum] = { vehicle(Vector2{ 450, 350 }, Vector2{ 10, 10 }, "icons/player1.png"),
+                       vehicle(Vector2{ 450, 400 }, Vector2{ 10, 10 }, "icons/player2.png"),
+                       vehicle(Vector2{ 450, 450 }, Vector2{ 10, 10 }, "icons/player3.png"),
+                       vehicle(Vector2{ 450, 500 }, Vector2{ 10, 10 }, "icons/player4.png")
+};
     cars[1].col = BLUE;
     cars[2].col = GREEN;
     cars[3].col = YELLOW;
 
+    bool saved = true;
+    if (level < 0) {
+        saved = false;
+    }
     button savebutton(Vector2{ 1400, 20 }, Vector2{ 50, 20 }, RED, "Save");
 
     // CREATING LEVEL ------------------------------------------------------------------------------------------
-    wallloop walls(""); //create as empty
-
-    //  load level from file
-    bool saved = true;
-    std::ifstream levelfile = std::ifstream();
-    if (level < 0) {
-        saved = false;
-        levelfile.open("level.txt"); // open prev unsaved if level is not supplied, possibly newly created level
-    }
-    else {
-        std::string filename = std::string("level") + std::to_string(level) + std::string(".txt");
-        levelfile.open(filename);
-    }
-    std::string leveldat;
-
-    if (levelfile.is_open()) {
-        while (std::getline(levelfile, leveldat)) {
-            walls.addloop(leveldat);
-        }
-        levelfile.close();
-    }
-    else {
-        std::cout << "file wont open\n";
-    }
+    wallloop walls = loadlevel(level);
 
     BeginDrawing();
     ClearBackground(WHITE);
@@ -87,7 +69,7 @@ void game::rungame(int level) {
     DrawText("Rendering level", 300, 300, 100, BLACK);
     EndDrawing();
 
-    Texture map = drawmap(walls, swidth, sheight); // turn the level into a texture that can be drawn each frame. terribly optimised, for large levels this can take multiple minutes
+    Texture map = drawmap(walls, swidth, sheight); // turn the level into a texture that can be drawn each frame
 
     const int maxdecocount = 1200;
     std::vector<Vector2> decopoints = gendeco(map, maxdecocount); // create random points for deco, not on the road
@@ -180,13 +162,12 @@ void game::rungame(int level) {
         SetShaderValueV(plantshader, p4uniform, &p4, RL_SHADER_UNIFORM_VEC2, 1);
 
         BeginTextureMode(trailbuffer); {
-            BeginBlendMode(BLEND_ALPHA_PREMULTIPLY);
-            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), { 255, 255, 255, 255 });
+            glClear(GL_DEPTH_BUFFER_BIT);
+            DrawTextureRec(map, Rectangle{ 0, 0, (float)map.width, (float)-map.height }, Vector2Zero(), { 255, 255, 255, 25 });
             // draw cars
             for (int i = 0; i < carnum; i++) {
                 cars[i].draw();
             }
-            EndBlendMode();
         }
         EndTextureMode();
 
@@ -311,7 +292,7 @@ int game::runmenu() {
     std::vector<button> levelbuttons = {};
 
     for (int i = 0; i < levels.size(); i++) {
-        levelbuttons.push_back(button(Vector2{ (float)(200 * (int)(i/20)), (50.0f * (i%20))}, Vector2{190, 45}, RED, std::string("Level ") + std::to_string(levels[i])));
+        levelbuttons.push_back(button(Vector2{ (float)(200 * (int)(i/20)), (50.0f * (i%20))}, Vector2{100, 40}, RED, std::string("Level ") + std::to_string(levels[i])));
         std::cout << std::string("Level ") + std::to_string(levels[i]) << "\n";
     }
 
@@ -394,6 +375,33 @@ Vector2 game::getdirection(int left, int right, int forward, int back) {
     if (IsKeyDown(back)) { direction.y -= 1; }
 
     return direction;
+}
+
+wallloop game::loadlevel(int level) {
+    wallloop walls(""); //create as empty
+
+    //  load level from file
+    std::ifstream levelfile = std::ifstream();
+    if (level < 0) {
+        levelfile.open("level.txt"); // open prev unsaved if level is not supplied, possibly newly created level
+    }
+    else {
+        std::string filename = std::string("level") + std::to_string(level) + std::string(".txt");
+        levelfile.open(filename);
+    }
+    std::string leveldat;
+
+    if (levelfile.is_open()) {
+        while (std::getline(levelfile, leveldat)) {
+            walls.addloop(leveldat);
+        }
+        levelfile.close();
+    }
+    else {
+        std::cout << std::string("level") + std::to_string(level) + std::string(".txt") << "won't open\n";
+    }
+
+    return walls;
 }
 
 Texture game::drawmap(wallloop walls, int width, int height) { // one time use function to draw the map to a texture

@@ -6,12 +6,20 @@
 //float rot;
 //float rotvel;
 
-vehicle::vehicle(Vector2 position, Vector2 size, float velocity) {
+vehicle::vehicle(Vector2 position, Vector2 size, std::string texpath, float velocity) {
 	pos = position;
 	siz = size;
 	vel = velocity;
 	rot = 0;
 	rotvel = 0;
+	if (texpath == "") {
+		Image img = GenImageColor(1, 1, WHITE);
+		icon = LoadTextureFromImage(img);
+		UnloadImage(img);
+	}
+	else {
+		icon = LoadTexture(texpath.c_str());
+	}
 }
 
 void vehicle::updatePhysics(float dt) {
@@ -49,7 +57,7 @@ void vehicle::updateMovement(Vector2 mov, float dt) {
 }
 
 void vehicle::draw(Color colour) {
-	//DrawCircleGradient(pos.x, pos.y, 35, Color{ 0, 0, 0, 20 }, Color{ 0, 0, 0, 0 });
+	DrawCircleGradient(pos.x, pos.y, 35, Color{ 0, 0, 0, 20 }, Color{ 0, 0, 0, 0 });
 
 	Rectangle r;
 	r.x = pos.x;
@@ -57,7 +65,7 @@ void vehicle::draw(Color colour) {
 	r.width = siz.x * 2;
 	r.height = siz.y * 2;
 
-	DrawRectanglePro(r, siz, rot, colour);
+	DrawTexturePro(icon, Rectangle{ 0, 0, (float)icon.width, (float)icon.height }, r, Vector2{ siz.x, siz.y }, rot + 90, col);
 
 	Vector2 p1, p2, p3;
 	p1 = { 2 * siz.x * cos(rot * DEG2RAD), 2 * siz.x * sin(rot * DEG2RAD) };

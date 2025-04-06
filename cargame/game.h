@@ -13,6 +13,7 @@
 #include <filesystem>
 #include <thread>
 #include <future>
+#include "glad/glad.h"
 namespace fs = std::filesystem;
 
 #define GLSL_VERSION 330
@@ -37,7 +38,7 @@ private:
 
 	void savelevel();
 
-	void loadlevel() {}
+	wallloop loadlevel(int level);
 
 	Texture drawmap(wallloop walls, int width, int height);
 
