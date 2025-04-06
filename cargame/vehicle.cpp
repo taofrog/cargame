@@ -1,11 +1,5 @@
 #include "vehicle.h"
 
-//Vector2 pos;
-//Vector2 vel;
-//Vector2 siz;
-//float rot;
-//float rotvel;
-
 vehicle::vehicle(Vector2 position, Vector2 size, std::string texpath, float velocity) {
 	pos = position;
 	siz = size;
